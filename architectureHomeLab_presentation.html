@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infrastructure Homelab — Architecture Système</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --surface2: #f1f0ec;
+    --border: #d6d3ca;
+    --border-strong: #9a9489;
+    --text: #1a1814;
+    --text-muted: #6b6760;
+    --text-faint: #a09c95;
+
+    /* Accent palette — restrained, professional */
+    --blue: #1e4fad;
+    --blue-light: #dce8ff;
+    --green: #1a6b3e;
+    --green-light: #d6f0e3;
+    --orange: #b84800;
+    --orange-light: #fde8d5;
+    --purple: #5b2d9e;
+    --purple-light: #ede4ff;
+    --red: #9b1c1c;
+    --red-light: #fde8e8;
+    --slate: #334155;
+    --slate-light: #e8ecf2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    padding: 56px 32px 80px;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,0,0,0.03) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,0,0,0.03) 40px);
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    max-width: 1120px;
+    margin: 0 auto 48px;
+    border-bottom: 2px solid var(--text);
+    padding-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .header-left h1 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  .header-left .doc-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .header-right {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .header-right .version-badge {
+    display: inline-block;
+    background: var(--text);
+    color: var(--bg);
+    padding: 3px 10px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  /* ─── SECTION TITLES ─── */
+  .section-header {
+    max-width: 1120px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-header h2 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── INTERNET ROW ─── */
+  .inet-row {
+    max-width: 1120px;
+    margin: 0 auto 8px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .inet-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .inet-box .inet-icon {
+    width: 28px; height: 28px;
+    background: var(--text);
+    color: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .inet-ports {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.63rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* ─── FLOW ARROW ─── */
+  .flow-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 auto;
+    max-width: 1120px;
+  }
+
+  .flow-arrow {
+    width: 1.5px;
+    height: 28px;
+    background: var(--border-strong);
+    position: relative;
+  }
+  .flow-arrow::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 7px solid var(--border-strong);
+  }
+
+  .flow-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-faint);
+    letter-spacing: 1px;
+    margin: 2px 0;
+  }
+
+  /* ─── MAIN GRID ─── */
+  .main-grid {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* ─── ZONES ─── */
+  .zone {
+    border: 1.5px solid;
+    padding: 20px;
+    position: relative;
+    background: var(--surface);
+  }
+
+  .zone-label {
+    position: absolute;
+    top: -11px;
+    left: 14px;
+    background: var(--surface);
+    padding: 1px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1.5px solid;
+  }
+
+  .zone-ubuntu { border-color: var(--orange); grid-column: 1; grid-row: 1 / 3; }
+  .zone-ubuntu .zone-label { color: var(--orange); border-color: var(--orange); }
+
+  .zone-nas { border-color: var(--green); grid-column: 2; grid-row: 1; }
+  .zone-nas .zone-label { color: var(--green); border-color: var(--green); }
+
+  /* ─── NET ZONES ─── */
+  .net-zone {
+    border: 1px dashed;
+    padding: 14px;
+    position: relative;
+    margin-top: 16px;
+    background: var(--surface2);
+  }
+
+  .net-label {
+    position: absolute;
+    top: -9px;
+    left: 12px;
+    background: var(--surface2);
+    padding: 1px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .net-host { border-color: var(--red); }
+  .net-host .net-label { color: var(--red); }
+
+  .net-proxy { border-color: var(--blue); }
+  .net-proxy .net-label { color: var(--blue); }
+
+  .net-nc { border-color: var(--purple); }
+  .net-nc .net-label { color: var(--purple); }
+
+  /* ─── SERVICES ─── */
+  .services-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+    justify-content: flex-start;
+  }
+
+  .svc {
+    border: 1px solid;
+    padding: 10px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    position: relative;
+    min-width: 150px;
+    background: var(--surface);
+    transition: box-shadow 0.15s;
+  }
+
+  .svc:hover {
+    box-shadow: 3px 3px 0 var(--text);
+  }
+
+  .svc-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .svc-name {
+    font-weight: 600;
+    font-size: 0.78rem;
+    line-height: 1.2;
+  }
+
+  .svc-port {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .svc-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.52rem;
+    padding: 1px 5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    position: absolute;
+    top: -8px;
+    right: 6px;
+    border: 1px solid;
+  }
+
+  /* Service color variants */
+  .s-npm    { border-color: var(--blue); }
+  .s-npm .svc-name { color: var(--blue); }
+  .s-npm .svc-badge { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+
+  .s-portainer { border-color: #1565c0; }
+  .s-portainer .svc-name { color: #1565c0; }
+
+  .s-bitwarden { border-color: #2563eb; }
+  .s-bitwarden .svc-name { color: #2563eb; }
+
+  .s-wg { border-color: var(--orange); }
+  .s-wg .svc-name { color: var(--orange); }
+  .s-wg .svc-badge { background: var(--orange-light); color: var(--orange); border-color: var(--orange); }
+
+  .s-nc { border-color: var(--green); }
+  .s-nc .svc-name { color: var(--green); }
+
+  .s-db { border-color: var(--border-strong); }
+  .s-db .svc-name { color: var(--slate); }
+
+  .s-adguard { border-color: var(--purple); }
+  .s-adguard .svc-name { color: var(--purple); }
+  .s-adguard .svc-badge { background: var(--purple-light); color: var(--purple); border-color: var(--purple); }
+
+  .s-nas-db { border-color: var(--green); }
+  .s-nas-db .svc-name { color: var(--green); }
+
+  /* ─── NFS MOUNT NOTE ─── */
+  .nfs-note {
+    margin-top: 12px;
+    border-left: 3px solid var(--green);
+    padding: 8px 12px;
+    background: var(--green-light);
+    font-size: 0.68rem;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--green);
+    line-height: 1.6;
+  }
+
+  .host-note {
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--red);
+    text-align: center;
+    border-top: 1px dashed rgba(155,28,28,0.3);
+    padding-top: 8px;
+  }
+
+  /* ─── NAS INTERNALS ─── */
+  .nas-pool {
+    border: 1px solid;
+    padding: 12px;
+    margin-top: 12px;
+  }
+
+  .pool-data { border-color: var(--green); }
+  .pool-backup { border-color: var(--border-strong); }
+
+  .pool-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .pool-data .pool-label { color: var(--green); }
+  .pool-backup .pool-label { color: var(--text-muted); }
+
+  /* ─── NFS INDICATOR ─── */
+  .nfs-link {
+    margin-top: 16px;
+    border: 1px dashed var(--green);
+    padding: 10px;
+    text-align: center;
+    background: var(--green-light);
+  }
+
+  .nfs-link-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--green);
+    margin-bottom: 4px;
+  }
+
+  .nfs-link-body {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ─── LEGEND ─── */
+  .legend-wrap {
+    max-width: 1120px;
+    margin: 28px auto 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: flex-start;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .legend-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    width: 100%;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .ldot {
+    width: 12px; height: 12px;
+    border: 1.5px solid;
+    flex-shrink: 0;
+  }
+
+  /* ─── TABLE ─── */
+  .table-section {
+    max-width: 1120px;
+    margin: 32px auto 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.73rem;
+    border: 1.5px solid var(--border-strong);
+  }
+
+  thead tr {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  th {
+    text-align: left;
+    padding: 9px 14px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:nth-child(even) td { background: var(--surface2); }
+  tr:hover td { background: var(--blue-light); }
+
+  .chip {
+    display: inline-block;
+    padding: 1px 7px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    margin: 1px;
+    font-family: 'IBM Plex Mono', monospace;
+    border: 1px solid;
+  }
+
+  .cp { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+  .cn { background: var(--purple-light); color: var(--purple); border-color: var(--purple); }
+  .ch { background: var(--red-light); color: var(--red); border-color: var(--red); }
+  .cg { background: var(--green-light); color: var(--green); border-color: var(--green); }
+  .cy { background: var(--orange-light); color: var(--orange); border-color: var(--orange); }
+  .cm { background: var(--slate-light); color: var(--slate); border-color: var(--border-strong); }
+
+  /* ─── BOTTOM GRID ─── */
+  .bottom-grid {
+    max-width: 1120px;
+    margin: 24px auto 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .info-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    padding: 20px;
+  }
+
+  .box-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.75rem;
+  }
+
+  .step-num {
+    width: 22px; height: 22px;
+    border: 1.5px solid;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 0.68rem;
+    font-family: 'IBM Plex Mono', monospace;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-desc {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  .cmd-box {
+    background: var(--text);
+    color: var(--bg);
+    padding: 14px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 2;
+  }
+
+  .cmd-comment { color: #6b9080; font-size: 0.63rem; }
+  .cmd-line { color: #7dd3fc; }
+
+  .networks-desc {
+    margin-top: 14px;
+    font-size: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .network-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 10px;
+    border-left: 3px solid;
+  }
+
+  .ni-blue { border-color: var(--blue); background: var(--blue-light); }
+  .ni-purple { border-color: var(--purple); background: var(--purple-light); }
+  .ni-red { border-color: var(--red); background: var(--red-light); }
+  .ni-green { border-color: var(--green); background: var(--green-light); }
+
+  .network-item .ni-name {
+    font-weight: 600;
+    font-size: 0.68rem;
+    font-family: 'IBM Plex Mono', monospace;
+    min-width: 110px;
+  }
+
+  .network-item .ni-desc {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    max-width: 1120px;
+    margin: 36px auto 0;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 800px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .zone-ubuntu, .zone-nas { grid-column: 1; grid-row: auto; }
+  }
+
+  @media print {
+    body { background: white; background-image: none; padding: 20px; }
+    .svc:hover { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="doc-type">Documentation Technique · Architecture Système</div>
+    <h1>Infrastructure Homelab<br>Self-Hosted</h1>
+  </div>
+  <div class="header-right">
+    <div class="version-badge">VERSION 2.0</div><br>
+    Ubuntu Server 22.04 LTS<br>
+    TrueNAS Scale<br>
+    Docker / Compose
+  </div>
+</header>
+
+<!-- SECTION: FLUX -->
+<div class="section-header"><h2>01 — Flux réseau entrant</h2></div>
+
+<!-- INTERNET -->
+<div class="inet-row">
+  <div class="inet-box">
+    <div class="inet-icon">🌍</div>
+    <div>
+      <div>Internet / WAN</div>
+      <div class="inet-ports">Requêtes HTTPS entrantes + Tunnel VPN</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-center">
+  <div class="flow-arrow"></div>
+  <div class="flow-label">:38472 · :52819 · :41337/udp</div>
+  <div class="flow-arrow"></div>
+</div>
+
+<!-- SECTION: ARCHITECTURE -->
+<div class="section-header" style="margin-top:8px;"><h2>02 — Topologie des services</h2></div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+
+  <!-- ══ UBUNTU SERVER ══ -->
+  <div class="zone zone-ubuntu">
+    <div class="zone-label">Serveur Ubuntu — Docker Host</div>
+
+    <!-- HOST NETWORK -->
+    <div class="net-zone net-host" style="margin-top:18px;">
+      <div class="net-label">Host Network — accès réseau physique direct</div>
+      <div class="services-row">
+        <div class="svc s-adguard" style="min-width:220px;">
+          <div class="svc-badge">DNS + DHCP</div>
+          <span class="svc-icon">🛡️</span>
+          <div>
+            <div class="svc-name">AdGuard Home</div>
+            <div class="svc-port">:47231 DNS · :29874/udp DHCP · :61042 Interface</div>
+          </div>
+        </div>
+      </div>
+      <div class="host-note">Mode host requis pour le DHCP — accès direct au réseau physique de l'hôte</div>
+    </div>
+
+    <!-- PROXY NETWORK -->
+    <div class="net-zone net-proxy" style="margin-top:16px;">
+      <div class="net-label">Réseau Docker "proxy" — point d'entrée applicatif</div>
+      <div class="services-row">
+
+        <div class="svc s-npm" style="min-width:195px;">
+          <div class="svc-badge">ENTRÉE</div>
+          <span class="svc-icon">🔀</span>
+          <div>
+            <div class="svc-name">Nginx Proxy Manager</div>
+            <div class="svc-port">:38472 · :52819 · :14085 admin</div>
+          </div>
+        </div>
+
+        <div class="svc s-wg" style="min-width:175px;">
+          <div class="svc-badge">VPN</div>
+          <span class="svc-icon">🔒</span>
+          <div>
+            <div class="svc-name">WireGuard</div>
+            <div class="svc-port">:41337/udp exposé</div>
+          </div>
+        </div>
+
+        <div class="svc s-portainer">
+          <span class="svc-icon">🐳</span>
+          <div>
+            <div class="svc-name">Portainer</div>
+            <div class="svc-port">via NPM uniquement</div>
+          </div>
+        </div>
+
+        <div class="svc s-bitwarden">
+          <span class="svc-icon">🔑</span>
+          <div>
+            <div class="svc-name">Bitwarden</div>
+            <div class="svc-port">via NPM uniquement</div>
+          </div>
+        </div>
+
+        <div class="svc s-nc" style="min-width:195px;">
+          <span class="svc-icon">☁️</span>
+          <div>
+            <div class="svc-name">Nextcloud</div>
+            <div class="svc-port">proxy + nextcloud_net</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- NEXTCLOUD NETWORK -->
+    <div class="net-zone net-nc" style="margin-top:16px;">
+      <div class="net-label">Réseau Docker "nextcloud_net" — réseau isolé, non exposé</div>
+      <div class="services-row" style="align-items:center;">
+
+        <div class="svc s-nc">
+          <span class="svc-icon">☁️</span>
+          <div>
+            <div class="svc-name">Nextcloud</div>
+            <div class="svc-port">app + config</div>
+          </div>
+        </div>
+
+        <div style="font-size:0.85rem;color:var(--text-faint);padding: 0 4px;">→</div>
+
+        <div class="svc s-db">
+          <span class="svc-icon">🗄️</span>
+          <div>
+            <div class="svc-name">MariaDB</div>
+            <div class="svc-port">base de données</div>
+          </div>
+        </div>
+
+        <div style="font-size:0.85rem;color:var(--text-faint);padding: 0 4px;">→</div>
+
+        <div class="svc s-db">
+          <span class="svc-icon">⚡</span>
+          <div>
+            <div class="svc-name">Redis</div>
+            <div class="svc-port">cache sessions</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="nfs-note">
+        📁 <strong>/var/www/html/data</strong> → monté depuis TrueNAS via NFS<br>
+        Les fichiers utilisateurs (photos, vidéos, documents) sont stockés sur le NAS
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ NAS TRUENAS ══ -->
+  <div class="zone zone-nas">
+    <div class="zone-label">NAS — TrueNAS Scale</div>
+
+    <div style="margin-top:18px;">
+
+      <div class="nas-pool pool-data">
+        <div class="pool-label">📦 pool_DATA</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="svc s-nas-db" style="min-width:0;">
+            <span class="svc-icon">📸</span>
+            <div>
+              <div class="svc-name">Photos</div>
+              <div class="svc-port">dataset NFS partagé</div>
+            </div>
+          </div>
+          <div class="svc s-nas-db" style="min-width:0;">
+            <span class="svc-icon">🎬</span>
+            <div>
+              <div class="svc-name">Vidéos</div>
+              <div class="svc-port">dataset NFS partagé</div>
+            </div>
+          </div>
+          <div class="svc s-nas-db" style="min-width:0;">
+            <span class="svc-icon">📄</span>
+            <div>
+              <div class="svc-name">Documents</div>
+              <div class="svc-port">dataset NFS partagé</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nas-pool pool-backup" style="margin-top:10px;">
+        <div class="pool-label">💾 pool_BACK_UP</div>
+        <div class="svc s-db" style="min-width:0;">
+          <span class="svc-icon">🔄</span>
+          <div>
+            <div class="svc-name">Snapshots & Backups</div>
+            <div class="svc-port">TrueNAS replication</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="nfs-link">
+      <div class="nfs-link-title">↕ NFS MOUNT</div>
+      <div class="nfs-link-body">
+        TrueNAS exporte les datasets<br>
+        Ubuntu monte via <code>/mnt/nas/</code><br>
+        Nextcloud écrit comme en local
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- LEGEND -->
+<div class="legend-wrap" style="margin-top:20px;">
+  <div class="legend-title">Légende des zones</div>
+  <div class="legend-item"><div class="ldot" style="border-color:var(--orange);"></div>Serveur Ubuntu (Docker Host)</div>
+  <div class="legend-item"><div class="ldot" style="border-color:var(--red);border-style:dashed;"></div>Host Network — réseau physique</div>
+  <div class="legend-item"><div class="ldot" style="border-color:var(--blue);border-style:dashed;"></div>Réseau Docker "proxy"</div>
+  <div class="legend-item"><div class="ldot" style="border-color:var(--purple);border-style:dashed;"></div>Réseau Docker "nextcloud_net"</div>
+  <div class="legend-item"><div class="ldot" style="border-color:var(--green);"></div>NAS TrueNAS Scale</div>
+  <div class="legend-item"><div class="ldot" style="border-color:var(--green);border-style:dashed;"></div>Montage NFS</div>
+</div>
+
+<!-- PORTS LEGEND -->
+<div class="legend-wrap" style="margin-top:10px;border-color:var(--orange);background:var(--orange-light);">
+  <div class="legend-title" style="color:var(--orange);">⚠ Note sur les ports — Sécurité par obscurcissement</div>
+  <div style="width:100%;font-size:0.72rem;color:var(--orange);line-height:1.8;font-family:'IBM Plex Sans',sans-serif;">
+    Les numéros de ports affichés dans ce document sont <strong>volontairement fictifs</strong> (ports aléatoires hors plage standard).
+    En production, les services sont exposés sur des <strong>ports non-standards</strong> pour réduire la surface d'attaque et limiter le scan automatisé.
+    Les vrais ports sont documentés uniquement dans la configuration interne (<code style="font-size:0.68rem;">docker-compose.yml</code> / fichiers <code style="font-size:0.68rem;">.env</code> hors dépôt public).
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;">
+    <div class="legend-item"><span class="chip cy" style="font-size:0.65rem;">XXXX</span> Port aléatoire non-standard</div>
+    <div class="legend-item"><span class="chip cm" style="font-size:0.65rem;">aucun</span> Pas de port exposé directement — accès via NPM uniquement</div>
+    <div class="legend-item"><span class="chip cg" style="font-size:0.65rem;">✓ NPM</span> Trafic routé via Nginx Proxy Manager (HTTPS + SSL)</div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-section" style="margin-top:32px;">
+  <div class="section-header"><h2>03 — Inventaire des services</h2></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Hôte</th>
+        <th>Réseau Docker</th>
+        <th>Ports exposés</th>
+        <th>Via NPM</th>
+        <th>Rôle fonctionnel</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>🛡️ AdGuard Home</td>
+        <td>Ubuntu</td>
+        <td><span class="chip ch">host</span></td>
+        <td><span class="chip cy">47231</span><span class="chip cy">29874/udp</span><span class="chip cy">61042</span></td>
+        <td><span class="chip cg">✓ via IP</span></td>
+        <td>Résolution DNS + DHCP LAN</td>
+      </tr>
+      <tr>
+        <td>🔀 Nginx Proxy Manager</td>
+        <td>Ubuntu</td>
+        <td><span class="chip cp">proxy</span></td>
+        <td><span class="chip cy">38472</span><span class="chip cy">52819</span><span class="chip cy">14085</span></td>
+        <td>—</td>
+        <td>Reverse proxy + terminaison SSL</td>
+      </tr>
+      <tr>
+        <td>🔒 WireGuard</td>
+        <td>Ubuntu</td>
+        <td><span class="chip cp">proxy</span></td>
+        <td><span class="chip cy">41337/udp</span></td>
+        <td><span class="chip cg">✓ Interface UI</span></td>
+        <td>VPN — accès distant sécurisé</td>
+      </tr>
+      <tr>
+        <td>🐳 Portainer</td>
+        <td>Ubuntu</td>
+        <td><span class="chip cp">proxy</span></td>
+        <td><span class="chip cm">aucun</span></td>
+        <td><span class="chip cg">✓</span></td>
+        <td>Gestion des conteneurs Docker</td>
+      </tr>
+      <tr>
+        <td>🔑 Bitwarden</td>
+        <td>Ubuntu</td>
+        <td><span class="chip cp">proxy</span></td>
+        <td><span class="chip cm">aucun</span></td>
+        <td><span class="chip cg">✓</span></td>
+        <td>Gestionnaire de mots de passe</td>
+      </tr>
+      <tr>
+        <td>☁️ Nextcloud</td>
+        <td>Ubuntu</td>
+        <td><span class="chip cp">proxy</span> <span class="chip cn">nextcloud_net</span></td>
+        <td><span class="chip cm">aucun</span></td>
+        <td><span class="chip cg">✓</span></td>
+        <td>Cloud personnel — stockage & sync</td>
+      </tr>
+      <tr>
+        <td>🗄️ MariaDB</td>
+        <td>Ubuntu</td>
+        <td><span class="chip cn">nextcloud_net</span></td>
+        <td><span class="chip cm">aucun</span></td>
+        <td><span class="chip cm">✗</span></td>
+        <td>Base de données Nextcloud</td>
+      </tr>
+      <tr>
+        <td>⚡ Redis</td>
+        <td>Ubuntu</td>
+        <td><span class="chip cn">nextcloud_net</span></td>
+        <td><span class="chip cm">aucun</span></td>
+        <td><span class="chip cm">✗</span></td>
+        <td>Cache & sessions Nextcloud</td>
+      </tr>
+      <tr>
+        <td>📸 Données (Photos/Vidéos/Docs)</td>
+        <td>NAS</td>
+        <td><span class="chip cg">NFS mount</span></td>
+        <td><span class="chip cm">aucun</span></td>
+        <td><span class="chip cm">✗</span></td>
+        <td>Stockage fichiers Nextcloud</td>
+      </tr>
+      <tr>
+        <td>💾 pool_BACK_UP</td>
+        <td>NAS</td>
+        <td>—</td>
+        <td><span class="chip cm">aucun</span></td>
+        <td><span class="chip cm">✗</span></td>
+        <td>Snapshots ZFS + réplication</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <span>Infrastructure Homelab · Documentation Technique · v2.0</span>
+  <span>Ubuntu Server 22.04 · TrueNAS Scale · Docker Compose</span>
+</footer>
+
+</body>
+</html>
